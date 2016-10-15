@@ -47,8 +47,10 @@ angular.module('starter', ['ionic', 'starter.controllers'])
         templateUrl: 'templates/quiz.html',
         controller: 'QuizCtrl',
         resolve: {
-          model: ['rpcClient', function (rpcClient) {
-            return rpcClient.getQuestionSet().then(function (questions) {
+          model: ['$stateParams', 'rpcClient', function ($stateParams, rpcClient) {
+            const categoryID = $stateParams.categoryID;
+
+            return rpcClient.getQuestionSet(categoryID).then(function (questions) {
               return {
                 questions:questions
               };
@@ -62,7 +64,8 @@ angular.module('starter', ['ionic', 'starter.controllers'])
     url: '/quiz-result',
     views: {
       'menuContent': {
-        templateUrl: 'templates/quiz-result.html'
+        templateUrl: 'templates/quiz-result.html',
+        controller: 'QuizResultCtrl'
       }
     }
   })

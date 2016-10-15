@@ -43,8 +43,8 @@ angular.module('starter.controllers', ['starter.services'])
 
 .controller('CategoryListCtrl', function($scope, $state) {
   $scope.categories = [
-    { title: 'Books', id: 1 },
-    { title: 'Kings', id: 2 }
+    { title: 'Book', id: 'book' },
+    { title: 'People', id: 'people' }
   ];
 
   $scope.play = function (categoryID) {
@@ -60,8 +60,9 @@ angular.module('starter.controllers', ['starter.services'])
   '$state',
   '$ionicPopup',
   'rpcClient',
+  'scoreTracker',
   'model',
-  function($scope, $stateParams, $state, $ionicPopup, rpcClient, model) {
+  function($scope, $stateParams, $state, $ionicPopup, rpcClient, scoreTracker, model) {
     console.log('State params:', $stateParams);
 
     const PHASE_QUESTION_ASK = 1;
@@ -82,6 +83,12 @@ angular.module('starter.controllers', ['starter.services'])
           return {
             phase: PHASE_QUESTION_RESULT,
             questionIndex: $scope.currentIndex
+          };
+        }
+        else if ($scope.currentIndex === $scope.questions.length - 1) {
+          return {
+            phase: PHASE_QUIZ_RESULT,
+            questionIndex: -1
           };
         }
         else {
@@ -116,12 +123,15 @@ angular.module('starter.controllers', ['starter.services'])
         $scope.currentQuestion = $scope.questions[$scope.currentIndex];
       }
       if ($scope.currentPhase === PHASE_QUESTION_RESULT) {
+        const result = $scope.answerResult === ANSWER_RESULT_CORRECT?
+            '<i class="icon ion-happy-outline"></i> Correct':
+            '<i class="icon ion-sad-outline"></i> Wrong';
+
         var popup = $ionicPopup.show({
-          template: '<div>RESULT:</div>',
-          title: 'Result',
+          template: '<h2 class="text-center">' + result + '</h2>',
           buttons: [
             {
-              text: '<b>OK</b>',
+              text: 'Next',
               type: 'button-positive'
             }
           ]
@@ -150,10 +160,12 @@ angular.module('starter.controllers', ['starter.services'])
       if (choice.correct) {
         console.log('[QuizCtrl.choose] Correct!!!');
         $scope.answerResult = ANSWER_RESULT_CORRECT;
+        scoreTracker.track({ correct: true });
       }
       else {
         console.log('[QuizCtrl.choose] Better luck next time <3 <3 <3');
         $scope.answerResult = ANSWER_RESULT_WRONG;
+        scoreTracker.track({ correct: false });
       }
 
       const phase = nextPhase();
@@ -172,4 +184,15 @@ angular.module('starter.controllers', ['starter.services'])
 
       executePhase(phase);
     };
-  }]);
+  }])
+
+.controller('QuizResultCtrl', [
+  '$scope',
+  'scoreTracker',
+  function ($scope, scoreTracker) {
+    $scope.scoring = scoreTracker.getScoring();
+
+    scoreTracker.reset();
+  }
+])
+;

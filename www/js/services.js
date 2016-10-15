@@ -1,56 +1,57 @@
 angular.module('starter.services', [])
 
 .service('rpcClient', ['$q', '$http', function ($q, $http) {
-  function getQuestionSet () {
-    return $q.when([
-      {
-        id:1,
-        content: 'Ipsa! Ipsa molestias deleniti duis integer aperiam faucibus sapiente accumsan nihil, neque. Gravida pulvinar tristique maxime ullamco vero lorem cubilia laoreet aliqua. Minus consequuntur nullam torto',
-        choices: [
-          {
-            id: 'A',
-            text: 'English',
-            correct: true,
-          },
-          {
-            id: 'B',
-            text: 'Japanese',
-          },
-          {
-            id: 'C',
-            text: 'German',
-          },
-          {
-            id: 'D',
-            text: 'Vietnamese',
-          }
-        ]
-      },
-      {
-        id:2,
-        content: 'Aliquam hendrerit maxime! Dignissim exercitationem ullam nullam bibendum necessitatibus voluptatem! ',
-        choices: [
-          {
-            id: 'A',
-            text: 'America',
-          },
-          {
-            id: 'B',
-            text: 'Asia',
-            correct: true
-          },
-          {
-            id: 'C',
-            text: 'Europe',
-          },
-          {
-            id: 'D',
-            text: 'Artic',
-          }
-        ]
+  const API_PREFIX = 'http://biblequiz2016.herokuapp.com/';
+  const QUESTION_SET_DEFAULT_SIZE = 2;
+
+  function getQuestionSet (category, size) {
+    if (!category) {
+      throw new Error('Category missing');
+    }
+    size = size || QUESTION_SET_DEFAULT_SIZE;
+
+    return $http.post(API_PREFIX + 'api/client/getQuestionSet?size=' + size, {
+      category: category
+    }).then(function(res) {
+      const data = res.data;
+      if (data.ok === true) {
+        return data.result;
       }
-    ])
+
+      throw new Error('Could not get question set');
+    });
   }
 
   return {getQuestionSet:getQuestionSet};
-}]);
+}])
+.service('scoreTracker', ['rpcClient', function (rpcClient) {
+  var scoring = {
+    correct: 0,
+    wrong: 0
+  };
+
+  function reset () {
+    scoring.correct = 0;
+    scoring.wrong = 0;
+  }
+
+  function track (result) {
+    if (result.correct === true) {
+      scoring.correct++;
+    }
+    else {
+      scoring.wrong++;
+    }
+  }
+
+  function getScoring () {
+    return angular.copy(scoring);
+  }
+
+  return {
+    reset: reset,
+    track: track,
+    getScoring: getScoring
+  };
+}])
+;
