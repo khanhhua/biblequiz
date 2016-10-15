@@ -1,0 +1,21 @@
+<ion-view view-title="Bible Quiz" hide-back-button="true" cache-view="false">
+  <ion-content class="padding">
+    <div class="card">
+      <div class="item item-text-wrap">
+        <h3>Question:</h3>
+        <p ng-bind="currentQuestion.content"></p>
+      </div>
+    </div>
+
+    <div class="list card">
+      <a ng-repeat="choice in currentQuestion.choices"
+         ng-click="choose(choice)"
+         class="item">
+        {{choiceLabels[$index]}}. {{choice.text}}
+      </a>
+    </div>
+
+    <button ng-click="skip()"
+            class="button button-assertive button-block">Skip</button>
+  </ion-content>
+</ion-view>

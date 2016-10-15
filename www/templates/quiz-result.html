@@ -1,0 +1,32 @@
+<ion-view view-title="Bible Quiz" can-swipe-back="false" hide-back-button="true" cache-view="false">
+  <ion-content class="padding">
+    <h2 class="text-center">Score</h2>
+
+    <div class="list card">
+      <div class="item item-icon-right">
+        Correct: <b>{{scoring.correct}}</b>
+        <i class="icon ion-checkmark"></i>
+      </div>
+      <div class="item item-icon-right">
+        Wrong: <b>{{scoring.wrong}}</b>
+        <i class="icon ion-sad"></i>
+      </div>
+      <div class="item item-body">
+        <p>
+          You may find explanations <a href="#/app/explain" class="subdued">here</a>
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col col-50">
+        <button class="button button-calm button-block icon-left ion-trophy">Challenge</button>
+      </div>
+      <div class="col col-50">
+        <button class="button button-positive button-block icon-left ion-social-facebook">Share</button>
+      </div>
+    </div>
+
+    <a href="#/app/categories" class="button button-stable button-clear button-block">Play again</a>
+  </ion-content>
+</ion-view>
