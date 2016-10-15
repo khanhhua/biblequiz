@@ -1,4 +1,4 @@
-angular.module('starter.controllers', [])
+angular.module('starter.controllers', ['starter.services'])
 
 .controller('AppCtrl', function($scope, $ionicModal, $timeout) {
 
@@ -41,16 +41,158 @@ angular.module('starter.controllers', [])
   };
 })
 
-.controller('PlaylistsCtrl', function($scope) {
-  $scope.playlists = [
-    { title: 'Reggae', id: 1 },
-    { title: 'Chill', id: 2 },
-    { title: 'Dubstep', id: 3 },
-    { title: 'Indie', id: 4 },
-    { title: 'Rap', id: 5 },
-    { title: 'Cowbell', id: 6 }
+.controller('CategoryListCtrl', function($scope, $state) {
+  $scope.categories = [
+    { title: 'Book', id: 'book' },
+    { title: 'People', id: 'people' }
   ];
+
+  $scope.play = function (categoryID) {
+    $state.go('app.quiz', {
+      categoryID: categoryID
+    });
+  };
 })
 
-.controller('PlaylistCtrl', function($scope, $stateParams) {
-});
+.controller('QuizCtrl', [
+  '$scope',
+  '$stateParams',
+  '$state',
+  '$ionicPopup',
+  'rpcClient',
+  'scoreTracker',
+  'model',
+  function($scope, $stateParams, $state, $ionicPopup, rpcClient, scoreTracker, model) {
+    console.log('State params:', $stateParams);
+
+    const PHASE_QUESTION_ASK = 1;
+    const PHASE_QUESTION_RESULT = 2;
+    const PHASE_QUIZ_RESULT = 3;
+
+    const ANSWER_RESULT_NONE = 0;
+    const ANSWER_RESULT_CORRECT = 1;
+    const ANSWER_RESULT_WRONG = 2;
+
+    /**
+     *
+     * @return {{phase: number, questionIndex: number}}
+     */
+    function nextPhase() {
+      if ($scope.currentPhase === PHASE_QUESTION_ASK) {
+        if ($scope.answerResult !== ANSWER_RESULT_NONE) {
+          return {
+            phase: PHASE_QUESTION_RESULT,
+            questionIndex: $scope.currentIndex
+          };
+        }
+        else if ($scope.currentIndex === $scope.questions.length - 1) {
+          return {
+            phase: PHASE_QUIZ_RESULT,
+            questionIndex: -1
+          };
+        }
+        else {
+          return {
+            phase: PHASE_QUESTION_ASK,
+            questionIndex: $scope.currentIndex + 1
+          };
+        }
+      }
+      else if ($scope.currentPhase === PHASE_QUESTION_RESULT) {
+        if ($scope.currentIndex < $scope.questions.length - 1) {
+          return {
+            phase: PHASE_QUESTION_ASK,
+            questionIndex: $scope.currentIndex + 1
+          };
+        }
+        else {
+          return {
+            phase: PHASE_QUIZ_RESULT,
+            questionIndex: -1
+          };
+        }
+      }
+    }
+
+    function executePhase(o) {
+      $scope.currentPhase = o.phase;
+      $scope.currentIndex = o.questionIndex;
+
+      if ($scope.currentPhase === PHASE_QUESTION_ASK) {
+        $scope.answerResult = ANSWER_RESULT_NONE;
+        $scope.currentQuestion = $scope.questions[$scope.currentIndex];
+      }
+      if ($scope.currentPhase === PHASE_QUESTION_RESULT) {
+        const result = $scope.answerResult === ANSWER_RESULT_CORRECT?
+            '<i class="icon ion-happy-outline"></i> Correct':
+            '<i class="icon ion-sad-outline"></i> Wrong';
+
+        var popup = $ionicPopup.show({
+          template: '<h2 class="text-center">' + result + '</h2>',
+          buttons: [
+            {
+              text: 'Next',
+              type: 'button-positive'
+            }
+          ]
+        });
+
+        popup.then(function () {
+          const phase = nextPhase();
+          executePhase(phase);
+        });
+      }
+      else if ($scope.currentPhase === PHASE_QUIZ_RESULT) {
+        $state.go('app.quiz-result');
+      }
+    }
+
+    $scope.choiceLabels = 'ABCDEF'.split('');
+    $scope.questions = model.questions;
+
+    $scope.currentPhase = PHASE_QUESTION_ASK;
+    $scope.currentIndex = 0;
+    $scope.currentQuestion = $scope.questions[$scope.currentIndex];
+
+    $scope.answerResult = ANSWER_RESULT_NONE;
+
+    $scope.choose = function (choice) {
+      if (choice.correct) {
+        console.log('[QuizCtrl.choose] Correct!!!');
+        $scope.answerResult = ANSWER_RESULT_CORRECT;
+        scoreTracker.track({ correct: true });
+      }
+      else {
+        console.log('[QuizCtrl.choose] Better luck next time <3 <3 <3');
+        $scope.answerResult = ANSWER_RESULT_WRONG;
+        scoreTracker.track({ correct: false });
+      }
+
+      const phase = nextPhase();
+
+      executePhase(phase);
+    };
+
+    $scope.skip = function () {
+      const phase = nextPhase();
+
+      executePhase(phase);
+    };
+
+    $scope.acceptQuestionResult = function () {
+      const phase = nextPhase();
+
+      executePhase(phase);
+    };
+  }])
+
+.controller('QuizResultCtrl', [
+  '$scope',
+  'scoreTracker',
+  function ($scope, scoreTracker) {
+    $scope.scoring = scoreTracker.getScoring();
+
+    scoreTracker.reset();
+  }
+])
+;

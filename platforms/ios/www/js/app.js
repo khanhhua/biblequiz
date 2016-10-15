@@ -25,49 +25,50 @@ angular.module('starter', ['ionic', 'starter.controllers'])
 .config(function($stateProvider, $urlRouterProvider) {
   $stateProvider
 
-    .state('app', {
+  .state('app', {
     url: '/app',
     abstract: true,
     templateUrl: 'templates/menu.html',
     controller: 'AppCtrl'
   })
-
-  .state('app.search', {
-    url: '/search',
+  .state('app.categories', {
+    url: '/categories',
     views: {
       'menuContent': {
-        templateUrl: 'templates/search.html'
+        templateUrl: 'templates/categories.html',
+        controller: 'CategoryListCtrl'
       }
     }
   })
-
-  .state('app.browse', {
-      url: '/browse',
-      views: {
-        'menuContent': {
-          templateUrl: 'templates/browse.html'
-        }
-      }
-    })
-    .state('app.playlists', {
-      url: '/playlists',
-      views: {
-        'menuContent': {
-          templateUrl: 'templates/playlists.html',
-          controller: 'PlaylistsCtrl'
-        }
-      }
-    })
-
-  .state('app.single', {
-    url: '/playlists/:playlistId',
+  .state('app.quiz', { // Center stage for playing
+    url: '/quiz/:categoryID',
     views: {
       'menuContent': {
-        templateUrl: 'templates/playlist.html',
-        controller: 'PlaylistCtrl'
+        templateUrl: 'templates/quiz.html',
+        controller: 'QuizCtrl',
+        resolve: {
+          model: ['$stateParams', 'rpcClient', function ($stateParams, rpcClient) {
+            const categoryID = $stateParams.categoryID;
+
+            return rpcClient.getQuestionSet(categoryID).then(function (questions) {
+              return {
+                questions:questions
+              };
+            })
+          }]
+        }
       }
     }
-  });
+  })
+  .state('app.quiz-result', { // Center stage for playing
+    url: '/quiz-result',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/quiz-result.html',
+        controller: 'QuizResultCtrl'
+      }
+    }
+  })
   // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/app/playlists');
+  $urlRouterProvider.otherwise('/app/categories');
 });
